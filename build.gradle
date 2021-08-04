@@ -1,4 +1,5 @@
 plugins {
+    id 'com.github.johnrengelman.shadow' version '6.1.0'
     id 'java'
 }
 
@@ -16,4 +17,7 @@ dependencies {
     compileOnly "org.keycloak:keycloak-services:15.0.0"
     compileOnly "org.keycloak:keycloak-saml-core-public:15.0.0"
     compileOnly "org.jboss.logging:jboss-logging:3.4.2.Final"
+
+    implementation 'io.nats:java-nats-streaming:2.2.3'
+    implementation 'io.nats:jnats:2.11.5'
 }
