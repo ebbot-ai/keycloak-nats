@@ -1,7 +1,6 @@
 package li.mesy.keycloaktonats.provider;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.keycloak.util.JsonSerialization;
 import io.nats.client.Connection;
 import io.nats.streaming.StreamingConnection;
 import org.keycloak.events.Event;
@@ -26,13 +25,11 @@ public class NATSEventListenerProvider implements EventListenerProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NATSEventListenerProvider.class);
 
-    private final ObjectMapper objectMapper;
     private final StreamingConnection streamingConnection;
     private final Connection plainConnection;
     private final EventListenerTransaction tx = new EventListenerTransaction(this::publishAdminEvent, this::publishEvent);
 
     NATSEventListenerProvider(final StreamingConnection streamingConnection, final Connection plainConnection) {
-        this.objectMapper = new ObjectMapper();
         this.streamingConnection = streamingConnection;
         this.plainConnection = plainConnection;
     }
@@ -49,7 +46,7 @@ public class NATSEventListenerProvider implements EventListenerProvider {
 
     @Override
     public void close() {
-        // We re-use this object so we don't care about this method
+        // We re-use this object so we don't care about this methoprivate void publishAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {d
         // To close the connection we use NATSEventListenerProvider#closeConnection instead
     }
 
@@ -79,11 +76,12 @@ public class NATSEventListenerProvider implements EventListenerProvider {
 
     private String serialize(Object object) {
         try {
-            return this.objectMapper.writeValueAsString(object);
-        } catch (final JsonProcessingException exception) {
-            LOGGER.error("could not serialize event", exception);
-            return "{}";
+            return JsonSerialization.writeValueAsPrettyString(object);
+
+        } catch (Exception e) {
+          LOGGER.error("Could not serialize to JSON", e);
         }
+        return "unparseable";
     }
 
     private String buildKey(final Event event) {
