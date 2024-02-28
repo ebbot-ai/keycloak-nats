@@ -6,6 +6,7 @@ import io.nats.client.Connection;
 import io.nats.streaming.StreamingConnection;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventListenerTransaction;
 import org.keycloak.events.admin.AdminEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +29,7 @@ public class NATSEventListenerProvider implements EventListenerProvider {
     private final ObjectMapper objectMapper;
     private final StreamingConnection streamingConnection;
     private final Connection plainConnection;
+    private final EventListenerTransaction tx = new EventListenerTransaction(this::publishAdminEvent, this::publishEvent);
 
     NATSEventListenerProvider(final StreamingConnection streamingConnection, final Connection plainConnection) {
         this.objectMapper = new ObjectMapper();
@@ -36,17 +38,13 @@ public class NATSEventListenerProvider implements EventListenerProvider {
     }
 
     @Override
-    public void onEvent(final Event event) {
-        final String serialized = this.serialize(event);
-        final String key = this.buildKey(event);
-        this.send(key, serialized);
+    public void onEvent(Event event) {
+        tx.addEvent(event.clone());
     }
 
     @Override
-    public void onEvent(final AdminEvent event, final boolean includeRepresentation) {
-        final String serialized = this.serialize(event);
-        final String key = this.buildKey(event);
-        this.send(key, serialized);
+    public void onEvent(AdminEvent event, boolean includeRepresentation) {
+        tx.addAdminEvent(event, includeRepresentation);
     }
 
     @Override
@@ -55,7 +53,18 @@ public class NATSEventListenerProvider implements EventListenerProvider {
         // To close the connection we use NATSEventListenerProvider#closeConnection instead
     }
 
-    private void send(final String key, final String value) {
+    private void publishEvent(Event event) {
+        String serialized = this.serialize(event);
+        String key = this.buildKey(event);
+        this.send(key, serialized);
+    }
+    private void publishAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
+        String serialized = this.serialize(adminEvent);
+        String key = this.buildKey(adminEvent);
+        this.send(key, serialized);
+    }
+
+    private void send(String key, String value) {
         if (this.streamingConnection != null) {
             try {
                 this.streamingConnection.publish(key, value.getBytes(StandardCharsets.UTF_8));
@@ -68,7 +77,7 @@ public class NATSEventListenerProvider implements EventListenerProvider {
         }
     }
 
-    private String serialize(final Object object) {
+    private String serialize(Object object) {
         try {
             return this.objectMapper.writeValueAsString(object);
         } catch (final JsonProcessingException exception) {
