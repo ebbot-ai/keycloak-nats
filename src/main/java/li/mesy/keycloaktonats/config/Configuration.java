@@ -13,21 +13,21 @@ import java.util.Optional;
  */
 public class Configuration {
 
-    private final boolean useStreaming;
+    private final boolean useJetStream;
     private final String url;
-    private final String streamingClusterId;
-    private final String streamingClientId;
+    private final int jetStreamAdminSize;
+    private final int jetStreamClientSize;
 
     private Configuration(
-            final boolean useStreaming,
+            final boolean useJetStream,
             final String url,
-            final String streamingClusterId,
-            final String streamingClientId
+            final int jetStreamAdminSize,
+            final int jetStreamClientSize
     ) {
-        this.useStreaming = useStreaming;
+        this.useJetStream = useJetStream;
         this.url = url;
-        this.streamingClusterId = streamingClusterId;
-        this.streamingClientId = streamingClientId;
+        this.jetStreamAdminSize = jetStreamAdminSize;
+        this.jetStreamClientSize = jetStreamClientSize;
     }
 
     /**
@@ -36,33 +36,32 @@ public class Configuration {
      * @return The loaded configuration
      */
     public static Configuration loadFromEnv() {
-        final boolean useStreaming = "true".equalsIgnoreCase(System.getenv("KEYCLOAK_NATS_STREAMING"));
+        final boolean useJetStream = "true".equalsIgnoreCase(System.getenv("KEYCLOAK_NATS_JETSTREAM"));
         final String url = Optional.ofNullable(System.getenv("KEYCLOAK_NATS_URL")).orElse(Options.DEFAULT_URL);
-        final String streamingClusterId = Optional.ofNullable(System.getenv("KEYCLOAK_NATS_STREAMING_CLUSTER_ID")).orElse("");
-        final String streamingClientId = Optional.ofNullable(System.getenv("KEYCLOAK_NATS_STREAMING_CLIENT_ID")).orElse("");
+        final int jetStreamAdminSize = Integer.parseInt(Optional.ofNullable(System.getenv("JETSTREAM_ADMIN_SIZE")).orElse("1"));
+        final int jetStreamClientSize = Integer.parseInt(Optional.ofNullable(System.getenv("JETSTREAM_CLIENT_SIZE")).orElse("1"));
 
         return new Configuration(
-                useStreaming,
+                useJetStream,
                 url,
-                streamingClusterId,
-                streamingClientId
+                jetStreamAdminSize,
+                jetStreamClientSize
         );
     }
 
-    public boolean useStreaming() {
-        return this.useStreaming;
+    public boolean useJetStream() {
+        return this.useJetStream;
     }
 
     public String getUrl() {
         return this.url;
     }
 
-    public String getStreamingClusterId() {
-        return this.streamingClusterId;
+    public int getJetStreamAdminSize() {
+        return jetStreamAdminSize;
     }
 
-    public String getStreamingClientId() {
-        return this.streamingClientId;
+    public int getJetStreamClientSize() {
+        return jetStreamClientSize;
     }
-
 }
