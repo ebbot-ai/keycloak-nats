@@ -11,11 +11,11 @@ repositories {
 }
 
 dependencies {
-    compileOnly "org.keycloak:keycloak-core:26.0.0"
-    compileOnly "org.keycloak:keycloak-server-spi:26.0.0"
-    compileOnly "org.keycloak:keycloak-server-spi-private:26.0.0"
-    compileOnly "org.keycloak:keycloak-services:26.0.0"
-    compileOnly "org.keycloak:keycloak-saml-core-public:26.0.0"
+    compileOnly "org.keycloak:keycloak-core:26.0.6"
+    compileOnly "org.keycloak:keycloak-server-spi:26.0.6"
+    compileOnly "org.keycloak:keycloak-server-spi-private:26.0.6"
+    compileOnly "org.keycloak:keycloak-services:26.0.6"
+    compileOnly "org.keycloak:keycloak-saml-core-public:26.0.6"
     compileOnly "org.jboss.logging:jboss-logging:3.5.3.Final"
 
     implementation 'io.nats:jnats:2.19.1'
