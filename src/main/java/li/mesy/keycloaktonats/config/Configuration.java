@@ -38,8 +38,8 @@ public class Configuration {
     public static Configuration loadFromEnv() {
         final boolean useJetStream = "true".equalsIgnoreCase(System.getenv("KEYCLOAK_NATS_JETSTREAM"));
         final String url = Optional.ofNullable(System.getenv("KEYCLOAK_NATS_URL")).orElse(Options.DEFAULT_URL);
-        final int jetStreamAdminSize = Integer.parseInt(Optional.ofNullable(System.getenv("JETSTREAM_ADMIN_SIZE")).orElse("1"));
-        final int jetStreamClientSize = Integer.parseInt(Optional.ofNullable(System.getenv("JETSTREAM_CLIENT_SIZE")).orElse("1"));
+        final int jetStreamAdminSize = Integer.parseInt(Optional.ofNullable(System.getenv("KEYCLOAK_JETSTREAM_ADMIN_SIZE")).orElse("1"));
+        final int jetStreamClientSize = Integer.parseInt(Optional.ofNullable(System.getenv("KEYCLOAK_JETSTREAM_CLIENT_SIZE")).orElse("1"));
 
         return new Configuration(
                 useJetStream,
