@@ -1,10 +1,7 @@
 package li.mesy.keycloaktonats.provider;
 
-import io.nats.client.Connection;
-import io.nats.client.Nats;
-import io.nats.streaming.NatsStreaming;
-import io.nats.streaming.Options;
-import io.nats.streaming.StreamingConnection;
+import io.nats.client.*;
+import io.nats.client.api.StreamConfiguration;
 import li.mesy.keycloaktonats.config.Configuration;
 import org.keycloak.Config;
 import org.keycloak.events.EventListenerProvider;
@@ -15,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Provides the {@link NATSEventListenerProvider} or {@link NOOPEventListenerProvider} to Keycloak
@@ -28,7 +24,6 @@ public class NATSEventListenerProviderFactory implements EventListenerProviderFa
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NATSEventListenerProviderFactory.class);
 
-    // We use ONE instance here as I don't see the point in creating new ones for every single event
     private EventListenerProvider listener;
 
     @Override
@@ -41,27 +36,22 @@ public class NATSEventListenerProviderFactory implements EventListenerProviderFa
         // We use our own configuration as I don't want to mess around with XML from two thousand years ago
         final Configuration config = Configuration.loadFromEnv();
 
-        // Set up a streaming connection when configured
-        if (config.useStreaming()) {
-            try {
-                final StreamingConnection connection = NatsStreaming.connect(
-                        config.getStreamingClusterId(),
-                        config.getStreamingClientId(),
-                        new Options.Builder().natsUrl(config.getUrl()).build()
-                );
-                this.listener = new NATSEventListenerProvider(connection, null);
-            } catch (final IOException | InterruptedException exception) {
-                LOGGER.error("could not open NATS Streaming (STAN) connection", exception);
-                this.listener = new NOOPEventListenerProvider();
-            }
-            return;
-        }
-
-        // Set up a plain NATS connection otherwise
         try {
-            final Connection connection = Nats.connect(config.getUrl());
-            this.listener = new NATSEventListenerProvider(null, connection);
-        } catch (final IOException | InterruptedException exception) {
+            Options options = new Options.Builder().server(config.getUrl()).build();
+            Connection natsConnection = Nats.connect(options);
+
+            if (config.useJetStream()) {
+                // Use JetStream connection
+                buildAdminEventStream(natsConnection, config);
+                buildClientEventStream(natsConnection, config);
+
+                this.listener = new NATSEventListenerProvider(natsConnection.jetStream(), natsConnection);
+            } else {
+                // Use classic connection
+                this.listener = new NATSEventListenerProvider(null, natsConnection);
+            }
+
+        } catch (final IOException | InterruptedException | JetStreamApiException exception) {
             LOGGER.error("could not open NATS connection", exception);
             this.listener = new NOOPEventListenerProvider();
         }
@@ -79,7 +69,7 @@ public class NATSEventListenerProviderFactory implements EventListenerProviderFa
         }
         try {
             ((NATSEventListenerProvider) this.listener).closeConnection();
-        } catch (final IOException | InterruptedException | TimeoutException exception) {
+        } catch (final IOException | InterruptedException exception) {
             LOGGER.error("could not close NATS connection", exception);
         }
     }
@@ -87,6 +77,40 @@ public class NATSEventListenerProviderFactory implements EventListenerProviderFa
     @Override
     public String getId() {
         return "keycloak-nats-adapter";
+    }
+
+    private void buildAdminEventStream(Connection natsConnection, Configuration config) throws IOException, JetStreamApiException {
+        final String streamName = "keycloak-admin-event-stream";
+        JetStream jetStream = natsConnection.jetStream();
+        StreamConfiguration streamConfiguration = StreamConfiguration.builder()
+                .name(streamName)
+                .subjects("keycloak.event.admin.>")
+                .maxBytes(config.getJetStreamAdminSize() * 1024 * 1024)
+                .build();
+
+        try {
+            jetStream.getStreamContext(streamName);
+            natsConnection.jetStreamManagement().updateStream(streamConfiguration);
+        } catch (JetStreamApiException e) {
+            natsConnection.jetStreamManagement().addStream(streamConfiguration);
+        }
+    }
+
+    private void buildClientEventStream(Connection natsConnection, Configuration config) throws IOException, JetStreamApiException {
+        final String streamName = "keycloak-client-event-stream";
+        JetStream jetStream = natsConnection.jetStream();
+        StreamConfiguration streamConfiguration = StreamConfiguration.builder()
+                .name(streamName)
+                .subjects("keycloak.event.client.>")
+                .maxBytes(config.getJetStreamClientSize() * 1024 * 1024)
+                .build();
+
+        try {
+            jetStream.getStreamContext(streamName);
+            natsConnection.jetStreamManagement().updateStream(streamConfiguration);
+        } catch (JetStreamApiException e) {
+            natsConnection.jetStreamManagement().addStream(streamConfiguration);
+        }
     }
 
 }

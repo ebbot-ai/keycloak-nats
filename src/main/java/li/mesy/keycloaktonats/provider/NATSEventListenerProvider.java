@@ -3,7 +3,9 @@ package li.mesy.keycloaktonats.provider;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.nats.client.Connection;
-import io.nats.streaming.StreamingConnection;
+import io.nats.client.JetStream;
+import io.nats.client.JetStreamApiException;
+import io.nats.client.api.PublishAck;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
@@ -12,10 +14,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.TimeoutException;
 
 /**
- * Publishes incoming events to a NATS (Streaming) connection
+ * Publishes incoming events to a NATS or JetStream connection
  *
  * @author Lukas Schulte Pelkum
  * @version 0.1.0
@@ -26,13 +27,13 @@ public class NATSEventListenerProvider implements EventListenerProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(NATSEventListenerProvider.class);
 
     private final ObjectMapper objectMapper;
-    private final StreamingConnection streamingConnection;
-    private final Connection plainConnection;
+    private final JetStream jetStream;
+    private final Connection natsConnection;
 
-    NATSEventListenerProvider(final StreamingConnection streamingConnection, final Connection plainConnection) {
+    NATSEventListenerProvider(final JetStream jetStream, final Connection natsConnection) {
         this.objectMapper = new ObjectMapper();
-        this.streamingConnection = streamingConnection;
-        this.plainConnection = plainConnection;
+        this.jetStream = jetStream;
+        this.natsConnection = natsConnection;
     }
 
     @Override
@@ -56,15 +57,20 @@ public class NATSEventListenerProvider implements EventListenerProvider {
     }
 
     private void send(final String key, final String value) {
-        if (this.streamingConnection != null) {
+        if (this.jetStream != null) {
             try {
-                this.streamingConnection.publish(key, value.getBytes(StandardCharsets.UTF_8));
-            } catch (final IOException | InterruptedException | TimeoutException exception) {
-                LOGGER.error("could not send message to NATS Streaming (STAN)", exception);
+                PublishAck ack = this.jetStream.publish(key, value.getBytes(StandardCharsets.UTF_8));
+                LOGGER.debug("Published new event {} to JetStream with sequence: {}", key, ack.getSeqno());
+            } catch (final IOException | JetStreamApiException exception) {
+                LOGGER.error("could not send message to JetStream", exception);
             }
-        }
-        if (this.plainConnection != null) {
-            this.plainConnection.publish(key, value.getBytes(StandardCharsets.UTF_8));
+        } else {
+            try {
+                LOGGER.debug("Published new event to NATS: {} \n {}", key, objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(value));
+            } catch (JsonProcessingException e) {
+                LOGGER.error("could not serialize new event", e);
+            }
+            this.natsConnection.publish(key, value.getBytes(StandardCharsets.UTF_8));
         }
     }
 
@@ -105,12 +111,9 @@ public class NATSEventListenerProvider implements EventListenerProvider {
                 replace(" ", "_");
     }
 
-    void closeConnection() throws IOException, InterruptedException, TimeoutException {
-        if (this.streamingConnection != null) {
-            this.streamingConnection.close();
-        }
-        if (this.plainConnection != null) {
-            this.plainConnection.close();
+    void closeConnection() throws IOException, InterruptedException {
+        if (this.natsConnection != null) {
+            this.natsConnection.close();
         }
     }
 
