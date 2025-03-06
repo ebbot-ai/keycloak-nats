@@ -1,4 +1,4 @@
-package li.mesy.keycloaktonats.provider;
+package ebbot.keycloaktonats.provider;
 
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;

@@ -1,4 +1,4 @@
-package li.mesy.keycloaktonats.config;
+package ebbot.keycloaktonats.config;
 
 import io.nats.client.Options;
 
