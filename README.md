@@ -47,13 +47,13 @@ Spaces get replaced with underscores.
 
 ### Admin Event
 
-Channel `keycloak.event.admin.mesy.success.user.update`
+Channel `keycloak.event.admin.ebbot.success.user.update`
 
 ```json
 {
   "id": "5ee1b9ee-426d-4f69-9877-b3a96b54da35",
   "time": 1628089918834,
-  "realmId": "mesy",
+  "realmId": "ebbot",
   "authDetails": {
     "realmId": "master",
     "clientId": "56f3e1c8-1a94-4373-9173-90ed06ee9c83",
@@ -71,14 +71,14 @@ Channel `keycloak.event.admin.mesy.success.user.update`
 
 ### Client Event
 
-Channel `keycloak.event.client.mesy.success.account-console.update_password`
+Channel `keycloak.event.client.ebbot.success.account-console.update_password`
 
 ```json
 {
   "id": "a1e97bf5-f1ac-477e-beb4-e8be6775f857",
   "time": 1628091019154,
   "type": "UPDATE_PASSWORD",
-  "realmId": "mesy",
+  "realmId": "ebbot",
   "clientId": "account-console",
   "userId": "db85bef5-f1b8-462d-a563-7de86cf7a2da",
   "sessionId": null,
@@ -88,7 +88,7 @@ Channel `keycloak.event.client.mesy.success.account-console.update_password`
     "auth_method": "openid-connect",
     "custom_required_action": "UPDATE_PASSWORD",
     "response_type": "code",
-    "redirect_uri": "http://localhost:8080/auth/realms/mesy/account/?referrer=security-admin-console&referrer_uri=http%3A%2F%2Flocalhost%3A8080%2Fauth%2Fadmin%2Fmaster%2Fconsole%2F%23%2Frealms%2Fmesy%2Fusers%2Fdb85bef5-f1b8-462d-a563-7de86cf7a2da%2Fuser-credentials#/security/signingin",
+    "redirect_uri": "http://localhost:8080/auth/realms/ebbot/account/?referrer=security-admin-console&referrer_uri=http%3A%2F%2Flocalhost%3A8080%2Fauth%2Fadmin%2Fmaster%2Fconsole%2F%23%2Frealms%2Febbot%2Fusers%2Fdb85bef5-f1b8-462d-a563-7de86cf7a2da%2Fuser-credentials#/security/signingin",
     "remember_me": "false",
     "code_id": "594a0a98-1889-45c9-a6b9-58b731cfa13f",
     "response_mode": "fragment",

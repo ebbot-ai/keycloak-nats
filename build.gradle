@@ -3,7 +3,7 @@ plugins {
     id 'java'
 }
 
-group 'li.mesy'
+group 'ebbot'
 version '0.3.0'
 
 repositories {

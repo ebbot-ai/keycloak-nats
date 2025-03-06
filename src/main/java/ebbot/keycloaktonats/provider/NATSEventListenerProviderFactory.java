@@ -1,8 +1,8 @@
-package li.mesy.keycloaktonats.provider;
+package ebbot.keycloaktonats.provider;
 
 import io.nats.client.*;
 import io.nats.client.api.StreamConfiguration;
-import li.mesy.keycloaktonats.config.Configuration;
+import ebbot.keycloaktonats.config.Configuration;
 import org.keycloak.Config;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
@@ -13,6 +13,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+class NatsConnectionListener implements ConnectionListener {
+    private static final Logger LOGGER = LoggerFactory.getLogger(NatsConnectionListener.class);
+    public void connectionEvent(Connection natsConnection, Events event) {
+        LOGGER.debug("NATS Connection Status: {}", event.toString());
+    }
+}
 /**
  * Provides the {@link NATSEventListenerProvider} or {@link NOOPEventListenerProvider} to Keycloak
  *
@@ -37,7 +43,10 @@ public class NATSEventListenerProviderFactory implements EventListenerProviderFa
         final Configuration config = Configuration.loadFromEnv();
 
         try {
-            Options options = new Options.Builder().server(config.getUrl()).build();
+            Options options = new Options.Builder()
+            .server(config.getUrl())
+                .connectionListener(new NatsConnectionListener())
+            .build();
             Connection natsConnection = Nats.connect(options);
 
             if (config.useJetStream()) {

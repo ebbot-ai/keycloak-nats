@@ -1,4 +1,4 @@
-package li.mesy.keycloaktonats.provider;
+package ebbot.keycloaktonats.provider;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
