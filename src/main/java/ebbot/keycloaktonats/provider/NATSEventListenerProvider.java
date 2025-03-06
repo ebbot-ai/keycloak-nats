@@ -70,7 +70,7 @@ public class NATSEventListenerProvider implements EventListenerProvider {
             } catch (JsonProcessingException e) {
                 LOGGER.error("could not serialize new event", e);
             }
-            LOGGER.info("Published new event key: {}  value: {}", key, value.getBytes(StandardCharsets.UTF_8));
+            LOGGER.info("Published new event key: {}  value: {}", key, value);
             this.natsConnection.publish(key, value.getBytes(StandardCharsets.UTF_8));
         }
     }
