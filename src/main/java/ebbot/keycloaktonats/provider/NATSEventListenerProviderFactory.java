@@ -16,7 +16,7 @@ import java.io.IOException;
 class NatsConnectionListener implements ConnectionListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(NatsConnectionListener.class);
     public void connectionEvent(Connection natsConnection, Events event) {
-        LOGGER.debug("NATS Connection Status: {}", event.toString());
+        LOGGER.info("NATS Connection Status: {}", event.toString());
     }
 }
 /**
